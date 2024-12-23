@@ -71,6 +71,34 @@ func AddCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, category)
 }
 
+func UpdateCategory(c *gin.Context) {
+	id := c.Param("id")
+	var category models.Category
+	if err := c.ShouldBindJSON(&category); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON data"})
+		return
+	}
+
+	query := `
+		UPDATE categories
+		SET name = $1, modified_by = $2, modified_at = NOW()
+		WHERE id = $3
+	`
+	res, err := database.DB.Exec(query, category.Name, "admin", id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update category"})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Category updated successfully"})
+}
+
 func DeleteCategory(c *gin.Context) {
 	id := c.Param("id")
 	query := "DELETE FROM categories WHERE id = $1"
