@@ -1,24 +1,23 @@
 package config
 
 import (
-	"fmt"
+	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
-var DBUrl string
+var (
+	DatabaseURL string
+	JWTSecret   string
+)
 
 func LoadConfig() {
-	err := godotenv.Load()
-	if err != nil {
-		panic("Error loading .env file")
-	}
+	DatabaseURL = os.Getenv("DATABASE_URL")
+	JWTSecret = os.Getenv("JWT_SECRET")
 
-	DBUrl = os.Getenv("DATABASE_URL")
-	if DBUrl == "" {
-		panic("DATABASE_URL is not set in .env file")
+	if DatabaseURL == "" {
+		log.Fatal("DATABASE_URL is not set in the environment variables")
 	}
-
-	fmt.Println("Configuration loaded successfully")
+	if JWTSecret == "" {
+		log.Fatal("JWT_SECRET is not set in the environment variables")
+	}
 }
