@@ -83,6 +83,47 @@ func GetBookDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, book)
 }
 
+func UpdateBook(c *gin.Context) {
+	id := c.Param("id")
+	var book models.Book
+	if err := c.ShouldBindJSON(&book); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON data"})
+		return
+	}
+
+	if book.ReleaseYear < 1980 || book.ReleaseYear > 2024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Release year must be between 1980 and 2024"})
+		return
+	}
+
+	if book.TotalPage > 100 {
+		book.Thickness = "tebal"
+	} else {
+		book.Thickness = "tipis"
+	}
+
+	query := `
+		UPDATE books
+		SET title = $1, description = $2, image_url = $3, release_year = $4, price = $5, 
+		    total_page = $6, thickness = $7, category_id = $8, modified_by = $9, modified_at = NOW()
+		WHERE id = $10
+	`
+	res, err := database.DB.Exec(query, book.Title, book.Description, book.ImageURL, book.ReleaseYear,
+		book.Price, book.TotalPage, book.Thickness, book.CategoryID, "admin", id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update book"})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Book updated successfully"})
+}
+
 func DeleteBook(c *gin.Context) {
 	id := c.Param("id")
 	query := "DELETE FROM books WHERE id = $1"
