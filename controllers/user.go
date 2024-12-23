@@ -23,7 +23,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Query pengguna dari database
 	var hashedPassword string
 	query := "SELECT password FROM users WHERE username = $1"
 	err := database.DB.QueryRow(query, req.Username).Scan(&hashedPassword)
@@ -35,14 +34,12 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Validasi password
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
-	// Generate JWT token
 	token, err := middlewares.GenerateJWT(req.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
@@ -59,14 +56,12 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 
-	// Simpan pengguna ke database
 	query := "INSERT INTO users (username, password, created_by) VALUES ($1, $2, $3)"
 	_, err = database.DB.Exec(query, user.Username, string(hashedPassword), "system")
 	if err != nil {
